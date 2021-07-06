@@ -25,7 +25,8 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString()
-  urlDatabase[shortURL] = req.body.longURL
+  urlDatabase[shortURL] = addHTTP(req.body.longURL)
+
   res.redirect(`/urls/${shortURL}`)
 });
 
@@ -51,7 +52,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.editURL
+  urlDatabase[req.params.shortURL] = addHTTP(req.body.editURL)
   res.redirect(`/urls`)
 });
 
@@ -102,6 +103,12 @@ function generateRandomString() {
   
   return randomString
 
+}
+
+function addHTTP (link) {
+  if (!/http:\/\//.test(link)) {
+    return 'http://' + link
+  }
 }
 
 
