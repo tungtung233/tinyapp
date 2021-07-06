@@ -109,6 +109,7 @@ function addHTTP (link) {
   if (!/^http:\/\//.test(link)) {
     return 'http://' + link
   }
+  return link
 }
 
 
