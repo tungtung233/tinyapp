@@ -106,7 +106,7 @@ function generateRandomString() {
 }
 
 function addHTTP (link) {
-  if (!/http:\/\//.test(link)) {
+  if (!/^http:\/\//.test(link)) {
     return 'http://' + link
   }
 }
