@@ -18,6 +18,30 @@ const urlDatabase = {
 };
 
 
+const users = {};
+
+
+class newAccount {
+
+  constructor(id, email, password) {
+    this.id = id;
+    this.email = email;
+    this.password = password
+  }
+
+  addUser() {
+    users[this.id] = {}
+
+    for (const key in this) {
+      users[this.id][key] = this[key];
+    }
+   
+  }
+
+}
+
+
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -26,7 +50,7 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   };
 
   res.render("urls_index", templateVars);
@@ -44,11 +68,34 @@ app.post("/urls", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   };
 
   res.render("register", templateVars);
 });
+
+
+//after creating a new account
+app.post("/register", (req, res) => {
+  if (!req.body.email || !req.body.password || !/@{1}/.test(req.body.email)) {
+    res.send(`ERROR: 400 Bad Request <br/> Invalid email or password`)
+  } 
+  
+  if (checkExistingEmail(users, req.body.email)) {
+    res.send(`ERROR: 400 Bad Request <br/> Email already registered to an account`)
+  } 
+
+  let userID = 'User-' + generateRandomString()
+  res.cookie('userID', userID)
+
+  userID = new newAccount (userID, req.body.email, req.body.password)
+  //this will add the newAccount to users
+  userID.addUser()
+
+  console.log(users)
+
+  res.redirect('/urls')
+})
 
 
 //after submitting a username login
@@ -68,7 +115,7 @@ app.post("/logout", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   };
   
   res.render("urls_new", templateVars);
@@ -77,7 +124,12 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
-    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+    const templateVars = { 
+      shortURL: req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL], 
+      user: users[req.cookies["userID"]] 
+    };
+
     res.render("urls_show", templateVars);
   } else {
     res.send('ERROR: 404 Page Not Found')
@@ -150,6 +202,18 @@ function addHTTP (link) {
   }
   return link
 }
+
+
+function checkExistingEmail (users, newEmail) {
+  for (const userID in users) {
+    if (users[userID]['email'] === newEmail) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 
 app.listen(PORT, () => {
