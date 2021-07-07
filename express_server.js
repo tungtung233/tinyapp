@@ -17,13 +17,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
+
   res.render("urls_index", templateVars);
 });
 
@@ -37,20 +42,31 @@ app.post("/urls", (req, res) => {
 
 //after submitting a username login
 app.post("/login", (req, res) => {
-  console.log('Cookies:', req.body.inputUsername)
   res.cookie('username', req.body.inputUsername)
-  res.redirect(`/urls`)
+  res.redirect('/urls')
+});
+
+
+//after clicking the logout button
+app.post("/logout", (req, res) => {
+  res.clearCookie('username')
+  res.redirect('/urls')
 });
 
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
+  
+  res.render("urls_new", templateVars);
 });
 
 
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
-    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
     res.render("urls_show", templateVars);
   } else {
     res.send('ERROR: 404 Page Not Found')
@@ -65,13 +81,13 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/edit", (req, res) => {
   urlDatabase[req.params.shortURL] = addHTTP(req.body.editURL)
-  res.redirect(`/urls`)
+  res.redirect('/urls')
 });
 
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL]
-  res.redirect(`/urls`)
+  res.redirect('/urls')
 });
 
 
