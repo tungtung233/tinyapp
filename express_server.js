@@ -12,13 +12,32 @@ var cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 
-const users = {};
+const users = {
+  'User-vAJe52': {
+    id: 'User-vAJe52',
+    email: 'tungtungleung233@hotmail.com',
+    password: '123'
+  }
+}
+
 
 
 class newAccount {
@@ -47,6 +66,7 @@ app.get("/", (req, res) => {
 });
 
 
+//displays the page with the table of urls
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -56,11 +76,22 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  let shortURL = generateRandomString()
-  urlDatabase[shortURL] = addHTTP(req.body.longURL)
 
-  res.redirect(`/urls/${shortURL}`)
+// after submitting a new URL - make sure only logged-in users can submit
+app.post("/urls", (req, res) => {
+  if (req.cookies['userID']) {
+    let shortURL = generateRandomString()
+    urlDatabase[shortURL] = {};
+    urlDatabase[shortURL]['longURL'] = addHTTP(req.body.longURL)
+    urlDatabase[shortURL]['userID'] = req.cookies['userID']
+  
+    res.redirect(`/urls/${shortURL}`)
+
+  } else {
+    res.sendStatus(403);
+
+  }
+
 });
 
 
@@ -75,7 +106,7 @@ app.get("/register", (req, res) => {
 });
 
 
-//after creating a new account
+//after registering a new account
 app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password || !/@{1}/.test(req.body.email)) {
     res.send(`ERROR: 400 Bad Request <br/> Invalid email or password`)
@@ -131,21 +162,29 @@ app.get("/logout", (req, res) => {
 });
 
 
+// create a new URL
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     user: users[req.cookies["userID"]]
   };
-  
-  res.render("urls_new", templateVars);
+
+  if (!templateVars['user']) {
+    res.redirect('/login')
+
+  } else {
+    res.render("urls_new", templateVars);
+
+  }
 });
 
 
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const templateVars = { 
+      // needed to specify which shortURL and longURL to show, rather than pass in the usual 'urls: urlsDatabase'
       shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL], 
+      longURL: urlDatabase[req.params.shortURL]['longURL'], 
       user: users[req.cookies["userID"]] 
     };
 
@@ -162,7 +201,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL] = addHTTP(req.body.editURL)
+  urlDatabase[req.params.shortURL]['longURL'] = addHTTP(req.body.editURL)
   res.redirect('/urls')
 });
 
@@ -174,8 +213,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL]['longURL']
+    res.redirect(longURL);
+  } else {
+    res.send('ERROR: 404 Page Not Found')
+  }
 });
 
 
