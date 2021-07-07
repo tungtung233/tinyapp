@@ -40,6 +40,17 @@ app.post("/urls", (req, res) => {
 });
 
 
+//creating a new account
+app.get("/register", (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
+
+  res.render("register", templateVars);
+});
+
+
 //after submitting a username login
 app.post("/login", (req, res) => {
   res.cookie('username', req.body.inputUsername)
