@@ -1,3 +1,14 @@
+<head>
+  <style>
+      .verticalLine {
+          border-left: 2px solid #404040;
+          height: 38px;
+          position:absolute;
+          left: 88%;
+      }
+  </style>
+</head>
+
 <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
     <a class="navbar-brand" href="/urls">TinyApp</a>
@@ -11,19 +22,17 @@
       </div>
     </div>
     <% if (user) { %>
-      <form class="form-inline" action="/logout" method="POST">
-        <h6><b>Logged in as: <%= user['email'] %></b></h6>
-        <p style="padding: 0 1em 1em 0;border-width: 2px"></p>
-        <button type="submit" class="btn btn-outline-dark">Logout</button>
-      </form>
+      <h6><b>Logged in as: <%= user.email %></b></h6>
+      <p style="padding: 0 2em 1em 0;border-width: 2px"></p>
+      <a href="/logout"><button type="button" class="btn btn-outline-dark" style="height: 38px">Logout</button></a>
+      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
+
     <% } else { %>
-      <form class="form-inline" action="/login" method="POST">
-        <div class="form-group mx-sm-3 mb-2">
-          <input type="username" class="form-control" name="inputUsername" placeholder="Username">
-          <p style="padding: 0 1em 1em 0;border-width: 2px"></p>
-          <button type="submit" class="btn btn-outline-dark">Login</button>
-        </div>
-      </form>
+      <a href="/login" style="padding: 0 2em 0 0; color:#404040"><b>Sign In</b></a>
+      <div class="verticalLine" style="padding: 0 1em 1em 0;border-width: 2px"></div>
+      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
+      <a href="/register"><button type="button" class="btn btn-dark">Register</button></a>
+      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
     <% } %>
   </nav>
 </header>

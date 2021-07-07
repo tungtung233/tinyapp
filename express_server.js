@@ -81,7 +81,7 @@ app.post("/register", (req, res) => {
     res.send(`ERROR: 400 Bad Request <br/> Invalid email or password`)
   } 
   
-  if (checkExistingEmail(users, req.body.email)) {
+  if (checkExisting(users, 'email', req.body.email)) {
     res.send(`ERROR: 400 Bad Request <br/> Email already registered to an account`)
   } 
 
@@ -92,22 +92,41 @@ app.post("/register", (req, res) => {
   //this will add the newAccount to users
   userID.addUser()
 
-  console.log(users)
-
   res.redirect('/urls')
 })
 
 
-//after submitting a username login
+//after clicking the log in hyperlink
+app.get("/login", (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    user: users[res.cookie["userID"]]
+  };
+
+  res.render("login", templateVars)
+
+})
+
+
+
+//after logging in
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.inputUsername)
-  res.redirect('/urls')
+  if (!checkExisting(users, 'email', req.body.email)) {
+    res.send(`ERROR: 403 Forbidden <br/> Email not registered <br/> <b>Access Denied<b/>`)
+  } else if (!checkExisting(users, 'password', req.body.password)) {
+    res.send(`ERROR: 403 Forbidden <br/> Password not recognised <br/> <b>Access Denied<b/>`)
+  } 
+
+  const userID = checkExisting(users, 'password', req.body.password, true)
+
+  res.cookie('userID', userID)
+  res.redirect('urls/')
 });
 
 
 //after clicking the logout button
-app.post("/logout", (req, res) => {
-  res.clearCookie('username')
+app.get("/logout", (req, res) => {
+  res.clearCookie('userID')
   res.redirect('/urls')
 });
 
@@ -161,16 +180,6 @@ app.get("/u/:shortURL", (req, res) => {
 
 
 
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
-
 function generateRandomString() {
   let randomString = "";
 
@@ -204,10 +213,15 @@ function addHTTP (link) {
 }
 
 
-function checkExistingEmail (users, newEmail) {
+// returns true if matching parameter is found in users, returns userID if 4th parameter is true
+function checkExisting (users, parameter, newParameter, returnUserID) {
   for (const userID in users) {
-    if (users[userID]['email'] === newEmail) {
-      return true;
+    if (users[userID][parameter] === newParameter) {
+      if (returnUserID) {
+        return userID;
+      } else {
+        return true
+      }
     }
   }
 
