@@ -8,6 +8,10 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 
+var cookieParser = require('cookie-parser')
+app.use(cookieParser())
+
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -28,6 +32,14 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = addHTTP(req.body.longURL)
 
   res.redirect(`/urls/${shortURL}`)
+});
+
+
+//after submitting a username login
+app.post("/login", (req, res) => {
+  console.log('Cookies:', req.body.inputUsername)
+  res.cookie('username', req.body.inputUsername)
+  res.redirect(`/urls`)
 });
 
 
