@@ -22,7 +22,7 @@ const {
   addHTTP,
   checkExisting,
   urlsForUser
-} = require('./functions');
+} = require('./helpers');
 
 
 const urlDatabase = {
