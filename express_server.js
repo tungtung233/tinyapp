@@ -73,9 +73,6 @@ app.get("/urls", (req, res) => {
       urls: listOfUserURLs,
       user: users[req.cookies["userID"]]
     };
-
-
-    console.log(templateVars)
   // } else {
     res.render("urls_index", templateVars)
   // }
@@ -92,9 +89,7 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL]['longURL'] = addHTTP(req.body.longURL)
     urlDatabase[shortURL]['userID'] = req.cookies['userID']
-
-    console.log(urlDatabase)
-  
+    
     res.redirect(`/urls/${shortURL}`)
 
   } else {

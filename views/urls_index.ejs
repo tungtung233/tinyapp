@@ -6,28 +6,60 @@
 
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
   <title>TinyApp</title>
+
+  <!-- changes the opacity of the modal background -->
+  <style>
+    .modal-backdrop {
+	    opacity: 0.88 !important;
+    }
+  </style>
+    
+  <!-- changes the behaviour of how the modal will work 
+  show =  shows the modal when the page loads
+  backdrop = 'static' means you can't click on the background to close the modal
+  keyboard = can't close the modal with the esc key-->
+  <script>
+    $(document).ready(function(){
+        $("#myModal").modal({
+          show: true,
+          backdrop: 'static',
+          keyboard: false
+        });
+    });
+  </script>
+
 </head>
 <body>
+  
 
   <header>
     <%- include('partials/_header'); %>
   </header>
+  
   <% if (!user) { %>
-
-    <div class="alert alert-danger" role="alert">
-      <br>
-      <h4 class="alert-heading">Not signed in!</h4>
-      <p>Unfortunately, you must be signed in to view your short URLs.</p>
-      <hr>
-      <a href="/login"><button type="button" class="btn btn-secondary btn-sm">Sign In</button></a>
-      <a href="/register" style="padding: 0 2em 0 0; color:#404040; margin:30px"><b>Register a new account</b></a>
-      <p></p>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="signInReminder"><b>Looks like you aren't signed in!</b></h4>
+          </div>
+          <div class="modal-body">
+            You must be signed in to view this page.
+          </div>
+          <div class="modal-footer">
+            <a href="/login"><button type="button" class="btn btn-success btn-lg">Sign in</button></a>
+            <a href="/register" style="padding: 0 2em 0 0; color:#404040; margin:30px"><b>Register a new account</b></a>
+          </div>
+        </div>
+      </div>
     </div>
-
+    
   <% } %>
 
-  <main style="margin: 1em;">
+    <main style="margin: 1em;">
     <h3>My URLs</h3>
     <table class="table">
       <thead>
@@ -50,9 +82,11 @@
         </tbody>
       </table>
   </main>
+  
   <!-- Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
 </body>
 </html>
