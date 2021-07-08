@@ -11,6 +11,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 let cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+const bcrypt = require('bcrypt');
+const salt = bcrypt.genSaltSync(10);
 
 const {
   generateRandomString,
@@ -99,11 +101,15 @@ app.post("/register", (req, res) => {
   let userID = 'User-' + generateRandomString();
   res.cookie('userID', userID);
 
-  userID = new newAccount(userID, req.body.email, req.body.password);
+  const password = req.body.password
+  const hashedPassword = bcrypt.hashSync(password, salt);
+
+  console.log(hashedPassword)
+
+  userID = new newAccount(userID, req.body.email, hashedPassword);
   //this will add the newAccount to users
   userID.addUser();
 
-  console.log(users);
   res.redirect('/urls');
 });
 
@@ -129,10 +135,11 @@ app.post("/login", (req, res) => {
   } else {
     userID = checkExisting(users, 'email', req.body.email, true);
   }
+
+  console.log(req.body.password)
+  console.log(users[userID]['password'])
   
-  console.log(userID);
-  
-  if (users[userID]['password'] !== req.body.password) {
+  if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
     res.send(`ERROR: 403 Forbidden <br/> Password not recognised <br/> <b>Access Denied<b/>`);
   } else {
     res.cookie('userID', userID);
