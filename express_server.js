@@ -7,9 +7,12 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+var cookieSession = require('cookie-session')
 
-let cookieParser = require('cookie-parser');
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['iDontShareMyFood, dontTouchMyCookies, youCanHaveWaterInstead'],
+}))
 
 const bcrypt = require('bcrypt');
 const salt = bcrypt.genSaltSync(10);
@@ -64,11 +67,11 @@ app.get("/", (req, res) => {
 
 //displays the page with the table of urls
 app.get("/urls", (req, res) => {
-  const listOfUserURLs = urlsForUser(urlDatabase, req.cookies['userID']);
+  const listOfUserURLs = urlsForUser(urlDatabase, req.session.userID);
 
   const templateVars = {
     urls: listOfUserURLs,
-    user: users[req.cookies["userID"]]
+    user: users[req.session.userID]
   };
   
   res.render("urls_index", templateVars);
@@ -79,7 +82,7 @@ app.get("/urls", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["userID"]]
+    user: users[req.session.userID]
   };
 
   res.render("register", templateVars);
@@ -99,12 +102,11 @@ app.post("/register", (req, res) => {
   }
 
   let userID = 'User-' + generateRandomString();
-  res.cookie('userID', userID);
+  req.session.userID = userID;
 
   const password = req.body.password
   const hashedPassword = bcrypt.hashSync(password, salt);
 
-  console.log(hashedPassword)
 
   userID = new newAccount(userID, req.body.email, hashedPassword);
   //this will add the newAccount to users
@@ -118,7 +120,7 @@ app.post("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[res.cookie["userID"]]
+    user: users[req.session.userID]
   };
 
   res.render("login", templateVars);
@@ -136,13 +138,11 @@ app.post("/login", (req, res) => {
     userID = checkExisting(users, 'email', req.body.email, true);
   }
 
-  console.log(req.body.password)
-  console.log(users[userID]['password'])
   
   if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
     res.send(`ERROR: 403 Forbidden <br/> Password not recognised <br/> <b>Access Denied<b/>`);
   } else {
-    res.cookie('userID', userID);
+    req.session.userID = userID;
     res.redirect('urls/');
 
   }
@@ -151,7 +151,7 @@ app.post("/login", (req, res) => {
 
 //after clicking the logout button
 app.get("/logout", (req, res) => {
-  res.clearCookie('userID');
+  req.session = null;
   res.redirect('/urls');
 });
 
@@ -160,7 +160,7 @@ app.get("/logout", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["userID"]]
+    user: users[req.session.userID]
   };
 
   if (!templateVars['user']) {
@@ -175,11 +175,11 @@ app.get("/urls/new", (req, res) => {
 
 // after submitting a new URL (from urls_new) - make sure only logged-in users can submit
 app.post("/urls", (req, res) => {
-  if (req.cookies['userID']) {
+  if (req.session.userID) {
     let shortURL = generateRandomString();
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL]['longURL'] = addHTTP(req.body.longURL);
-    urlDatabase[shortURL]['userID'] = req.cookies['userID'];
+    urlDatabase[shortURL]['userID'] = req.session.userID;
 
     res.redirect(`/urls/${shortURL}`);
 
@@ -196,7 +196,7 @@ app.get("/urls/:shortURL", (req, res) => {
       // needed to specify which shortURL and longURL to show, rather than pass in the usual 'urls: urlsDatabase'
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL]['longURL'],
-      user: users[req.cookies["userID"]]
+      user: users[req.session.userID]
     };
 
     res.render("urls_show", templateVars);
@@ -214,7 +214,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //after clicking the edit button in urls_show - checks to see if the user is the creator of the url, only then does it allow the edit to go through
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (urlDatabase[req.params.shortURL]["userID"] === req.cookies["userID"]) {
+  if (urlDatabase[req.params.shortURL]["userID"] === req.session.userID) {
     urlDatabase[req.params.shortURL]['longURL'] = addHTTP(req.body.editURL);
     res.redirect('/urls');
 
@@ -225,7 +225,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //after clicking the delete button in urls_show - checks to see if the user is the creator of the url, only then does it allow the deletion to go through
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (urlDatabase[req.params.shortURL]["userID"] === req.cookies["userID"]) {
+  if (urlDatabase[req.params.shortURL]["userID"] === req.session.userID) {
     delete urlDatabase[req.params.shortURL];
     res.redirect('/urls');
 
