@@ -12,27 +12,25 @@ var cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
-
-
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+      userID: "User-aJ48lW"
   },
   i3BoGr: {
       longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+      userID: "User-aJ48lW"
+  },
+  vAJe52: {
+    longURL: "https://www.google.ca",
+    userID: "75lPbr"
   }
 };
 
 
 const users = {
-  'User-vAJe52': {
-    id: 'User-vAJe52',
+  'User-aJ48lW': {
+    id: 'User-aJ48lW',
     email: 'tungtungleung233@hotmail.com',
     password: '123'
   }
@@ -68,12 +66,22 @@ app.get("/", (req, res) => {
 
 //displays the page with the table of urls
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.cookies["userID"]]
-  };
+  // if (req.cookies['userID']) {
+    const listOfUserURLs = urlsForUser(urlDatabase, req.cookies['userID'])
 
-  res.render("urls_index", templateVars);
+    const templateVars = {
+      urls: listOfUserURLs,
+      user: users[req.cookies["userID"]]
+    };
+
+
+    console.log(templateVars)
+  // } else {
+    res.render("urls_index", templateVars)
+  // }
+
+
+
 });
 
 
@@ -84,6 +92,8 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL]['longURL'] = addHTTP(req.body.longURL)
     urlDatabase[shortURL]['userID'] = req.cookies['userID']
+
+    console.log(urlDatabase)
   
     res.redirect(`/urls/${shortURL}`)
 
@@ -201,14 +211,24 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL]['longURL'] = addHTTP(req.body.editURL)
-  res.redirect('/urls')
+  if (urlDatabase[req.params.shortURL]["userID"] === req.cookies["userID"]) {
+    urlDatabase[req.params.shortURL]['longURL'] = addHTTP(req.body.editURL)
+    res.redirect('/urls')
+
+  } else {
+    res.sendStatus(403)
+  }
 });
 
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL]
-  res.redirect('/urls')
+  if (urlDatabase[req.params.shortURL]["userID"] === req.cookies["userID"]) {
+    delete urlDatabase[req.params.shortURL]
+    res.redirect('/urls')
+
+  } else {
+    res.sendStatus(403)
+  }
 });
 
 
@@ -269,6 +289,17 @@ function checkExisting (users, parameter, newParameter, returnUserID) {
   }
 
   return false;
+}
+
+
+function urlsForUser(urlDatabase, currentUserID) {
+  const userURLs = {};
+  for (const url in urlDatabase) {
+    if (urlDatabase[url]["userID"] === currentUserID) {
+      userURLs[url] = urlDatabase[url]
+    }
+  }
+  return userURLs;
 }
 
 

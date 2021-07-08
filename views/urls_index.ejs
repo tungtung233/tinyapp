@@ -13,6 +13,19 @@
   <header>
     <%- include('partials/_header'); %>
   </header>
+  <% if (!user) { %>
+
+    <div class="alert alert-danger" role="alert">
+      <br>
+      <h4 class="alert-heading">Not signed in!</h4>
+      <p>Unfortunately, you must be signed in to view your short URLs.</p>
+      <hr>
+      <a href="/login"><button type="button" class="btn btn-secondary btn-sm">Sign In</button></a>
+      <a href="/register" style="padding: 0 2em 0 0; color:#404040; margin:30px"><b>Register a new account</b></a>
+      <p></p>
+    </div>
+
+  <% } %>
 
   <main style="margin: 1em;">
     <h3>My URLs</h3>
@@ -33,11 +46,9 @@
             <td><form method="POST" action="/urls/<%= url %>"><button type="submit" class="btn btn-outline-primary">Edit</button></form></td>
             <td><form method="POST" action="/urls/<%= url %>/delete"><button type="submit" class="btn btn-outline-danger">Delete</button></form></td>
           </tr>
-        <% } %>
-      </tbody>
-    </table>
-    <!-- <br>
-    <a href='#'>Create a new URL</a> -->
+          <% } %>
+        </tbody>
+      </table>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

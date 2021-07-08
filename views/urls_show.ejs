@@ -11,7 +11,19 @@
   <header>
     <%- include('partials/_header'); %>
   </header>
+  <% if (!user) { %>
 
+    <div class="alert alert-danger" role="alert">
+      <br>
+      <h4 class="alert-heading">Not signed in!</h4>
+      <p>Please sign in!.</p>
+      <hr>
+      <a href="/login"><button type="button" class="btn btn-secondary btn-sm">Sign In</button></a>
+      <a href="/register" style="padding: 0 2em 0 0; color:#404040; margin:30px"><b>Register a new account</b></a>
+      <p></p>
+    </div>
+
+  <% } %>
 
   <div class="card text-center">
       <div class="card-header"></div>
