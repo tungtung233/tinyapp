@@ -7,11 +7,15 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+//kept cookieParser for cookies that don't need encryption (e.g. error messages)
+let cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 var cookieSession = require('cookie-session')
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['iDontShareMyFood, dontTouchMyCookies, youCanHaveWaterInstead'],
+  keys: ['dontTouchMyCookies!!'],
 }))
 
 const bcrypt = require('bcrypt');
@@ -58,10 +62,26 @@ class newAccount {
   }
 }
 
+app.use('/', (req, res, next) => {
+
+  // clears error cookies from the registration and login form every time you go to a different page
+  res.clearCookie('registrationError')
+  res.clearCookie('loginError')
+  return next()
+
+})
 
 
+
+
+// redirects the user depending on whether they are logged in or not
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (!req.session.userID) {
+    res.redirect('/login');
+
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 
@@ -82,7 +102,8 @@ app.get("/urls", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.session.userID]
+    user: users[req.session.userID],
+    registrationError: req.cookies.registrationError ? req.cookies.registrationError : null
   };
 
   res.render("register", templateVars);
@@ -93,26 +114,29 @@ app.get("/register", (req, res) => {
 //also checks if the 'new' email already exists in the database
 //if data passes these tests, new account and a cookie containing their userID is created
 app.post("/register", (req, res) => {
-  if (!req.body.email || !req.body.password || !/@{1}/.test(req.body.email)) {
-    res.send(`ERROR: 400 Bad Request <br/> Invalid email or password`);
-  }
+  const {email, password} = req.body
+
+  if (!email || !password || !/@{1}/.test(email)) {
+    res.cookie('registrationError', 'Invalid email or password!')
+    res.redirect('/register');
+
+  } else if (checkExisting(users, 'email', email)) {
+    res.cookie('registrationError', 'Email already registered to an account!')
+    res.redirect('/register');
+
+  } else {
+    let userID = 'User-' + generateRandomString();
+    req.session.userID = userID;
   
-  if (checkExisting(users, 'email', req.body.email)) {
-    res.send(`ERROR: 400 Bad Request <br/> Email already registered to an account`);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    
+    userID = new newAccount(userID, email, hashedPassword);
+    //this will add the newAccount to users
+    userID.addUser();
+  
+    res.redirect('/urls');
   }
 
-  let userID = 'User-' + generateRandomString();
-  req.session.userID = userID;
-
-  const password = req.body.password
-  const hashedPassword = bcrypt.hashSync(password, salt);
-
-
-  userID = new newAccount(userID, req.body.email, hashedPassword);
-  //this will add the newAccount to users
-  userID.addUser();
-
-  res.redirect('/urls');
 });
 
 
@@ -120,27 +144,26 @@ app.post("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.session.userID]
+    user: users[req.session.userID],
+    loginError: req.cookies.loginError ? req.cookies.loginError : null
   };
 
   res.render("login", templateVars);
-
 });
 
 
-//after logging in - tests that email exists in the database, then checks if email's password also matches
+//when logging in - tests that email exists in the database, then checks if email's password also matches
 app.post("/login", (req, res) => {
-  let userID = '';
+  let userID = checkExisting(users, 'email', req.body.email, true);
 
-  if (!checkExisting(users, 'email', req.body.email)) {
-    res.send(`ERROR: 403 Forbidden <br/> Email not registered <br/> <b>Access Denied<b/>`);
-  } else {
-    userID = checkExisting(users, 'email', req.body.email, true);
-  }
+  if (!userID) {
+    res.cookie('loginError', 'Email not registered')
+    res.redirect('/login');
+    
+  } else if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
+    res.cookie('loginError', 'Password not recognised')
+    res.redirect('/login');
 
-  
-  if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
-    res.send(`ERROR: 403 Forbidden <br/> Password not recognised <br/> <b>Access Denied<b/>`);
   } else {
     req.session.userID = userID;
     res.redirect('urls/');
@@ -202,6 +225,7 @@ app.get("/urls/:shortURL", (req, res) => {
     res.render("urls_show", templateVars);
   } else {
     res.send('ERROR: 404 Page Not Found');
+    
   }
 });
 

@@ -27,6 +27,11 @@
           <label for="password">Password</label>
           <input type="password" class="form-control" name="password" placeholder="Password" style="width: 500px" >
         </div>
+        <p style="color:red">
+          <% if(loginError){ %>
+              <%= loginError %>
+            <% } %>
+        </p>
         <button type="submit" class="btn btn-primary">Sign in</button>
       </form>
     </main>
