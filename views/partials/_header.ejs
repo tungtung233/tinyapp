@@ -4,7 +4,7 @@
           border-left: 2px solid #404040;
           height: 38px;
           position:absolute;
-          left: 88%;
+          left: 84%;
       }
   </style>
 </head>
@@ -23,16 +23,16 @@
     </div>
     <% if (user) { %>
       <h6><b>Logged in as: <%= user.email %></b></h6>
-      <p style="padding: 0 2em 1em 0;border-width: 2px"></p>
+      <p style="padding: 0 2em 1em 0"></p>
       <a href="/logout"><button type="button" class="btn btn-outline-dark" style="height: 38px">Logout</button></a>
-      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
+      <p style="padding: 0 2em 2em 0"></p>
 
     <% } else { %>
       <a href="/login" style="padding: 0 2em 0 0; color:#404040"><b>Sign In</b></a>
-      <div class="verticalLine" style="padding: 0 1em 1em 0;border-width: 2px"></div>
-      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
+      <div class="verticalLine" style="padding: 0 1em 1em 0"></div>
+      <p style="padding: 0 2em 2em 0"></p>
       <a href="/register"><button type="button" class="btn btn-dark">Register</button></a>
-      <p style="padding: 0 2em 2em 0;border-width: 2px"></p>
+      <p style="padding: 0 2em 2em 0"></p>
     <% } %>
   </nav>
 </header>

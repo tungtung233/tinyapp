@@ -11,12 +11,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 let cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-var cookieSession = require('cookie-session')
+let cookieSession = require('cookie-session');
 
 app.use(cookieSession({
   name: 'session',
   keys: ['dontTouchMyCookies!!'],
-}))
+}));
 
 const bcrypt = require('bcrypt');
 const salt = bcrypt.genSaltSync(10);
@@ -65,13 +65,11 @@ class newAccount {
 app.use('/', (req, res, next) => {
 
   // clears error cookies from the registration and login form every time you go to a different page
-  res.clearCookie('registrationError')
-  res.clearCookie('loginError')
-  return next()
+  res.clearCookie('registrationError');
+  res.clearCookie('loginError');
+  return next();
 
-})
-
-
+});
 
 
 // redirects the user depending on whether they are logged in or not
@@ -114,14 +112,14 @@ app.get("/register", (req, res) => {
 //also checks if the 'new' email already exists in the database
 //if data passes these tests, new account and a cookie containing their userID is created
 app.post("/register", (req, res) => {
-  const {email, password} = req.body
+  const {email, password} = req.body;
 
   if (!email || !password || !/@{1}/.test(email)) {
-    res.cookie('registrationError', 'Invalid email or password!')
+    res.cookie('registrationError', 'Invalid email or password!');
     res.redirect('/register');
 
   } else if (checkExisting(users, 'email', email)) {
-    res.cookie('registrationError', 'Email already registered to an account!')
+    res.cookie('registrationError', 'Email already registered to an account!');
     res.redirect('/register');
 
   } else {
@@ -157,11 +155,11 @@ app.post("/login", (req, res) => {
   let userID = checkExisting(users, 'email', req.body.email, true);
 
   if (!userID) {
-    res.cookie('loginError', 'Email not registered')
+    res.cookie('loginError', 'Email not registered');
     res.redirect('/login');
     
   } else if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
-    res.cookie('loginError', 'Password not recognised')
+    res.cookie('loginError', 'Password not recognised');
     res.redirect('/login');
 
   } else {
