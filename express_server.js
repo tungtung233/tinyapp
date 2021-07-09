@@ -8,10 +8,10 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 //kept cookieParser for cookies that don't need encryption (e.g. error messages)
-let cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-let cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 
 app.use(cookieSession({
   name: 'session',
@@ -62,13 +62,12 @@ class newAccount {
   }
 }
 
+// clears error cookies and email cookie from the registration and login form every time you go to a different page
 app.use('/', (req, res, next) => {
-
-  // clears error cookies from the registration and login form every time you go to a different page
   res.clearCookie('registrationError');
   res.clearCookie('loginError');
+  res.clearCookie('email');
   return next();
-
 });
 
 
@@ -76,7 +75,6 @@ app.use('/', (req, res, next) => {
 app.get("/", (req, res) => {
   if (!req.session.userID) {
     res.redirect('/login');
-
   } else {
     res.redirect("/urls");
   }
@@ -98,13 +96,17 @@ app.get("/urls", (req, res) => {
 
 //after clicking on the register button, it will display the 'register' page
 app.get("/register", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.session.userID],
-    registrationError: req.cookies.registrationError ? req.cookies.registrationError : null
-  };
-
-  res.render("register", templateVars);
+  if (req.session.userID) {
+    res.redirect('/urls');
+  } else {
+    const templateVars = {
+      urls: urlDatabase,
+      user: users[req.session.userID],
+      registrationError: req.cookies.registrationError ? req.cookies.registrationError : null
+    };
+  
+    res.render("register", templateVars);
+  }
 });
 
 
@@ -117,11 +119,9 @@ app.post("/register", (req, res) => {
   if (!email || !password || !/@{1}/.test(email)) {
     res.cookie('registrationError', 'Invalid email or password!');
     res.redirect('/register');
-
   } else if (checkExisting(users, 'email', email)) {
     res.cookie('registrationError', 'Email already registered to an account!');
     res.redirect('/register');
-
   } else {
     let userID = 'User-' + generateRandomString();
     req.session.userID = userID;
@@ -134,38 +134,40 @@ app.post("/register", (req, res) => {
   
     res.redirect('/urls');
   }
-
 });
 
 
 //after clicking the log in hyperlink, will display the login page
 app.get("/login", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    user: users[req.session.userID],
-    loginError: req.cookies.loginError ? req.cookies.loginError : null
-  };
-
-  res.render("login", templateVars);
+  if (req.session.userID) {
+    res.redirect('/urls');
+  } else {
+    const templateVars = {
+      urls: urlDatabase,
+      user: users[req.session.userID],
+      loginError: req.cookies.loginError ? req.cookies.loginError : null,
+      email: req.cookies.email ? req.cookies.email : null
+    };
+  
+    res.render("login", templateVars);
+  }
 });
 
 
 //when logging in - tests that email exists in the database, then checks if email's password also matches
 app.post("/login", (req, res) => {
-  let userID = checkExisting(users, 'email', req.body.email, true);
+  const userID = checkExisting(users, 'email', req.body.email, true);
 
   if (!userID) {
     res.cookie('loginError', 'Email not registered');
     res.redirect('/login');
-    
   } else if (!bcrypt.compareSync(req.body.password, users[userID]['password'])) {
+    res.cookie('email', req.body.email);
     res.cookie('loginError', 'Password not recognised');
     res.redirect('/login');
-
   } else {
     req.session.userID = userID;
     res.redirect('urls/');
-
   }
 });
 
@@ -186,10 +188,8 @@ app.get("/urls/new", (req, res) => {
 
   if (!templateVars['user']) {
     res.redirect('/login');
-
   } else {
     res.render("urls_new", templateVars);
-
   }
 });
 
@@ -197,13 +197,12 @@ app.get("/urls/new", (req, res) => {
 // after submitting a new URL (from urls_new) - make sure only logged-in users can submit
 app.post("/urls", (req, res) => {
   if (req.session.userID) {
-    let shortURL = generateRandomString();
+    const shortURL = generateRandomString();
     urlDatabase[shortURL] = {};
     urlDatabase[shortURL]['longURL'] = addHTTP(req.body.longURL);
     urlDatabase[shortURL]['userID'] = req.session.userID;
 
     res.redirect(`/urls/${shortURL}`);
-
   } else {
     res.sendStatus(403);
   }
@@ -212,45 +211,43 @@ app.post("/urls", (req, res) => {
 
 //after verifying that a user can submit a new URL, they get redirected here - this checks to see if the new shortURL is valid in the database
 app.get("/urls/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL]) {
-    const templateVars = {
-      // needed to specify which shortURL and longURL to show, rather than pass in the usual 'urls: urlsDatabase'
-      shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL]['longURL'],
-      user: users[req.session.userID]
-    };
-
-    res.render("urls_show", templateVars);
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL]) {
+    if (urlDatabase[shortURL]['userID'] === req.session.userID) {
+      const templateVars = {
+        // needed to specify which shortURL and longURL to show, rather than pass in the usual 'urls: urlsDatabase'
+        shortURL: shortURL,
+        longURL: urlDatabase[shortURL]['longURL'],
+        user: users[req.session.userID]
+      };
+  
+      res.render("urls_show", templateVars);
+    } else {
+      res.sendStatus(403);
+    }
   } else {
-    res.send('ERROR: 404 Page Not Found');
-    
+    res.sendStatus(404);
   }
-});
-
-
-//after clicking the edit buttons in urls_index
-app.post("/urls/:shortURL", (req, res) => {
-  res.redirect(`/urls/${req.params.shortURL}`);
 });
 
 
 //after clicking the edit button in urls_show - checks to see if the user is the creator of the url, only then does it allow the edit to go through
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (urlDatabase[req.params.shortURL]["userID"] === req.session.userID) {
-    urlDatabase[req.params.shortURL]['longURL'] = addHTTP(req.body.editURL);
-    res.redirect('/urls');
-
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL]["userID"] === req.session.userID) {
+    urlDatabase[shortURL]['longURL'] = addHTTP(req.body.editURL);
+    res.redirect(`/urls/${shortURL}`);
   } else {
     res.sendStatus(403);
   }
 });
+
 
 //after clicking the delete button in urls_show - checks to see if the user is the creator of the url, only then does it allow the deletion to go through
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (urlDatabase[req.params.shortURL]["userID"] === req.session.userID) {
     delete urlDatabase[req.params.shortURL];
     res.redirect('/urls');
-
   } else {
     res.sendStatus(403);
   }
